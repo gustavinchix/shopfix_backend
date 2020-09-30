@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Categoria
 #from models import Person
 
 app = Flask(__name__)
@@ -29,6 +29,70 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
+
+
+#endpoints Categorias
+@app.route('/categorias', methods=['GET','POST'])
+#@app.route('/categorias/<categoria_id>', methods=['GET','PATCH','DELETE'])
+def gestionar_categorias():
+    """
+        "GET": Devuelve lista de categorias
+        "POST": Crear una categoria y devolver su infomacion
+    """
+    #Validando el methodo usado en la peticion
+    if request.method == 'GET':
+        #Selecciona todos los resgistros de la tabla categoria y asiganrlo a una vairale
+        categorias = Categoria.query.all() #.all() para devolverlo como lista
+        #Serializar la lista
+        categorias_serializadas=list(map(lambda categoria: categoria.serializar(), categorias))
+        print(categorias_serializadas)        
+        #devolver lista de categorias serializadas
+        return jsonify(categorias_serializadas), 200
+    else:
+        #Crea una variable y asigna el diccionario de datos para crear la categoria
+        insumo_categoria = request.json
+        if insumo_categoria is None:
+            return jsonify ({
+                "resultado": "No envio la informacion para crear la categoria"
+            }),400
+        if (
+            "nombre" not in insumo_categoria or 
+            "descripcion" not in insumo_categoria or 
+            "icono" not in insumo_categoria
+            ):
+            return jsonify({
+                "resultado": "Debe indicar un nombre, descripcion e icono para crear la categoria"
+            }),400
+        #Validar que no venga vacio
+        if (
+            insumo_categoria["nombre"] == "" or
+            insumo_categoria["descripcion"] == "" or
+            insumo_categoria["icono"] == ""
+
+        ):
+            return jsonify({
+                "resultado": "Debe indicar un nombre e icono para crear la categoria"
+            })
+        nueva_categoria = Categoria.registrar_categoria(
+            insumo_categoria["nombre"],
+            insumo_categoria["descripcion"],
+            insumo_categoria["icono"]
+        )
+        #agregar a la base de datos
+        db.session.add(nueva_categoria)
+        try:
+            db.session.commit()
+            #Si el commit es exitoso se devuelve la ifo de nueva categoria
+            return jsonify(nueva_categoria.serializar()),201
+        except Exception as error:
+            db.session.rollback()
+            print(f"{error.args} {type(error)}")
+            return jsonify({
+                "resultado": f"{error.args}"
+            }), 500
+
+        
+
 
 @app.route('/user', methods=['GET'])
 def handle_hello():
