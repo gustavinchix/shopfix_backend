@@ -159,7 +159,7 @@ def registrar_producto():
 
     request_body_producto = request.get_json()
 
-    producto1 = Producto(titulo=request_body_producto["titulo"], descripcion=request_body_producto["descripcion"])
+    producto1 = Producto(titulo=request_body_producto["titulo"], descripcion=request_body_producto["descripcion"], imagen=request_body_producto["imagen"], precio=request_body_producto["precio"])
     db.session.add(producto1)
     db.session.commit()
 
@@ -178,6 +178,10 @@ def actualizar_producto(producto_id):
         producto1.titulo = request_body_producto["titulo"]
     if "descripcion" in request_body_producto:
         producto1.descripcion = request_body_producto["descripcion"]
+    if "imagen" in request_body_producto:
+        producto1.imagen = request_body_producto["imagen"]
+    if "precio" in request_body_producto:
+        producto1.precio = request_body_producto["precio"]
 
     db.session.commit()
 
