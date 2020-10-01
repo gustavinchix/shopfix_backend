@@ -33,8 +33,8 @@ def sitemap():
 
 #endpoints Categorias
 @app.route('/categorias', methods=['GET','POST'])
-#@app.route('/categorias/<categoria_id>', methods=['GET','PATCH','DELETE'])
 def gestionar_categorias():
+
     """
         "GET": Devuelve lista de categorias
         "POST": Crear una categoria y devolver su infomacion
@@ -42,7 +42,7 @@ def gestionar_categorias():
     #Validando el methodo usado en la peticion
     if request.method == 'GET':
         #Selecciona todos los resgistros de la tabla categoria y asiganrlo a una vairale
-        categorias = Categoria.query.all() #.all() para devolverlo como lista
+        categorias = Categoria.query.all() #.all() para devolverlo como lista        
         #Serializar la lista
         categorias_serializadas=list(map(lambda categoria: categoria.serializar(), categorias))
         print(categorias_serializadas)        
@@ -91,8 +91,50 @@ def gestionar_categorias():
                 "resultado": f"{error.args}"
             }), 500
 
-        
-
+@app.route('/categorias/<categoria_id>', methods=['GET','PATCH','DELETE'])
+def rud_categorias(categoria_id):
+    #Crear una vairable y asignar una cat en especifico
+    categoria = Categoria.query.get(categoria_id)
+    #Validar si la categoria existe
+    if isinstance(categoria, Categoria):
+        if request.method == 'GET':            
+            #devolver lista de categorias serializadas
+            return jsonify(categoria.serializar()), 200
+        elif request.method == 'PATCH':
+            #recuperar diccionar del body del request
+            diccionario = request.json
+            #actualizar propiedades que vengan en el dicc
+            categoria.modificar_categoria(diccionario)
+            #guardar cambio en BD, hacer commit
+            try:
+                db.session.commit()
+                #devolver la categoria serializada
+                return jsonify(categoria.serializar()), 200
+            except Exception as error:
+                db.session.rollback()
+                print(f"{error.args} {type(error)}")
+                return jsonify({
+                    "resultado": f"{error.args}"
+                }), 500
+        else:
+            #remover la categoria de  la BD, hacer commit, return 204
+            db.session.delete(categoria)
+            try:
+                db.session.commit()
+                #devolver delete exitoso
+                return jsonify({
+                    "resultado": "Se ha eliminado la categoria exitosamente"
+                }), 200
+            except Exception as error:
+                db.session.rollback()
+                print(f"{error.args} {type(error)}")
+                return jsonify({
+                    "resultado": f"{error.args}"
+                }), 500
+    else:
+        return jsonify({
+            "resultado":"La categoria no existe"
+        }), 404
 
 @app.route('/user', methods=['GET'])
 def handle_hello():

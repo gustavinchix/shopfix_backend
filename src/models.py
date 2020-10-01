@@ -35,6 +35,15 @@ class Categoria(db.Model):
             "icono": self.icono
         }
 
+    def modificar_categoria(self,diccionario):
+        if "nombre" in diccionario:
+            self.nombre = diccionario["nombre"]
+        if "descripcion" in diccionario:
+            self.descripcion = diccionario["descripcion"]
+        if "icono" in diccionario:
+            self.icono = diccionario["icono"]
+        return True
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
