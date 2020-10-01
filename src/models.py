@@ -7,6 +7,10 @@ class Categoria(db.Model):
     nombre = db.Column(db.String(25), unique=True, nullable=False)
     descripcion = db.Column(db.String(80), nullable=False)
     icono = db.Column(db.String(80), unique=True, nullable=False)
+    productos = db.relationship('Producto', lazy=True)
+
+    def __repr__(self):
+        return '<Categoria %r>' % self.nombre
     
     def __init__(self,nombre,descripcion,icono):
         """crea y devuelve las instancias de la clase"""
@@ -44,6 +48,24 @@ class Categoria(db.Model):
             self.icono = diccionario["icono"]
         return True
 
+
+class Producto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(50), unique=False, nullable=False)
+    descripcion = db.Column(db.String(100), unique=False, nullable=False)
+    categoria_id = db.Column(db.Integer(), db.ForeignKey(Categoria.id))
+
+    def __repr__(self):
+        return '<Producto %r>' % self.titulo
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "titulo": self.titulo,
+            "descripcion": self.descripcion
+        }
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -56,6 +78,5 @@ class User(db.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
+            "email": self.email
         }
