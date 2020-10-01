@@ -29,6 +29,7 @@ class Categoria(db.Model):
 
     def serializar(self):
         return {
+            "id": self.id,
             "nombre": self.nombre,
             "descripcion": self.descripcion,
             "icono": self.icono
