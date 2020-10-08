@@ -45,15 +45,10 @@ class Categoria(db.Model):
             "id": self.id,
             "nombre": self.nombre,
             "descripcion": self.descripcion,
-            "icono": self.icono
+            "icono": self.icono,
+            "productos_en_categoria": list(map(lambda x: x.serialize(), self.productos))
         }
 
-    def serializar_productos(self):
-        """Serializa todos los productos asociados a una categoria"""
-        return{
-            "nombre": self.nombre,
-            "productos_categoria": list(map(lambda x: x.serialize(), self.productos))
-        }
 
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
