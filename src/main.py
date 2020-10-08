@@ -100,7 +100,7 @@ def gestionar_categorias():
             }), 500
 
 #Consulta, edicion, borrar
-@app.route('/categorias/<categoria_id>', methods=['GET','PATCH','DELETE'])
+@app.route('/categorias/<categoria_id>', methods=['GET','PUT','DELETE'])
 def rud_categorias(categoria_id):
     #Crear una vairable y asignar una cat en especifico
     categoria = Categoria.query.get(categoria_id)
@@ -109,7 +109,7 @@ def rud_categorias(categoria_id):
         if request.method == 'GET':            
             #devolver lista de categorias serializadas
             return jsonify(categoria.serializar()), 200
-        elif request.method == 'PATCH':
+        elif request.method == 'PUT':
             #recuperar diccionar del body del request
             diccionario = request.json
             #actualizar propiedades que vengan en el dicc
