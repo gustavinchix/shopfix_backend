@@ -58,9 +58,42 @@ class Producto(db.Model):
     imagen = db.Column(db.String(150), unique=False, nullable=True)
     categoria_id = db.Column(db.Integer, db.ForeignKey(Categoria.id))
 
+
+    def __init__(self, titulo, descripcion, precio, imagen, categoria_id):
+        """crea y devuelve las instancias de la clase"""
+        self.titulo = titulo
+        self.descripcion = descripcion
+        self.precio = precio
+        self.imagen = imagen
+        self.categoria_id = categoria_id
+
     def __repr__(self):
         return '<Producto %s>' % self.titulo
- 
+  
+    @classmethod
+    def registrar_producto(cls,titulo, descripcion, precio, imagen, categoria_id):
+        nuevo_producto= cls(
+            titulo.lower().capitalize(), 
+            descripcion, 
+            precio, 
+            imagen, 
+            categoria_id
+            )
+        return nuevo_producto
+
+    def modificar_producto(self,diccionario):        
+        if "titulo" in diccionario:
+            self.titulo = diccionario["titulo"]
+        if "descripcion" in diccionario:
+            self.descripcion = diccionario["descripcion"]
+        if "precio" in diccionario:
+            self.precio = diccionario["precio"]
+        if "imagen" in diccionario:
+            self.imagen = diccionario["imagen"]
+        if "categoria_id" in diccionario:
+            self.categoria_id = diccionario["categoria_id"]
+        return True
+
     def serialize(self):        
         return {
             "id": self.id,

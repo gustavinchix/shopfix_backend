@@ -145,6 +145,120 @@ def rud_categorias(categoria_id):
             "resultado":"La categoria no existe"
         }), 404
 
+#======================================
+#endpoints productos
+#======================================
+#consulta y crear
+@app.route('/productos', methods=['GET','POST'])
+def chequear_producto():
+    #Validando el methodo usado en la peticion
+    if request.method == 'GET':
+        #Selecciona todos los resgistros de la tabla categoria y asiganrlo a una vairale
+        productos = Producto.query.all() #.all() para devolverlo como lista
+
+        #Validr si hay params en la url
+        name = request.args.get("productname")
+        if name is not None:
+            productos_filtrados = filter(lambda producto: name in producto.name, productos)
+        else:
+            productos_filtrados = productos
+        #Serializar la lista
+        productos_serializados=list(map(lambda producto: producto.serialize(), productos))               
+        #devolver lista de categorias serializadas
+        return jsonify(productos_serializados), 200
+    else:
+        #Crea una variable y asigna el diccionario de datos para crear la categoria
+        insumo_producto = request.json
+        if insumo_producto is None:
+            return jsonify ({
+                "resultado": "No envio la informacion para crear el producto"
+            }),400
+        if (
+            "titulo" not in insumo_producto or 
+            "descripcion" not in insumo_producto or 
+            "precio" not in insumo_producto or
+            "imagen" not in insumo_producto or
+            "categoria_id" not in insumo_producto 
+            ):
+            return jsonify({
+                "resultado": "Debe indicar un titulo, descripcion, precio, imagen y categoria para crear el producto"
+            }),400
+        #Validar que no venga vacio
+        if (
+            insumo_producto["titulo"] == "" or
+            insumo_producto["descripcion"] == "" or
+            insumo_producto["precio"] == "" or
+            insumo_producto["imagen"] == "" or
+            insumo_producto["categoria_id"] == "" 
+        ):
+            return jsonify({
+                "resultado": "Debe indicar un titulo, descripcion, precio, imagen y categoria para crear el producto"
+            })
+        nuevo_producto = Producto.registrar_producto(
+            insumo_producto["titulo"],
+            insumo_producto["descripcion"],
+            insumo_producto["precio"],
+            insumo_producto["imagen"],
+            insumo_producto["categoria_id"]
+        )
+        #agregar a la base de datos
+        db.session.add(nuevo_producto)
+        try:
+            db.session.commit()
+            #Si el commit es exitoso se devuelve la ifo de nueva categoria
+            return jsonify(nuevo_producto.serialize()),201
+        except Exception as error:
+            db.session.rollback()
+            print(f"{error.args} {type(error)}")
+            return jsonify({
+                "resultado": f"{error.args}"
+            }), 500
+
+#Consulta, edicion, borrar
+@app.route('/productos/<producto_id>', methods=['GET','PUT','DELETE'])
+def rud_productos(producto_id):
+    #Crear una vairable y asignar una cat en especifico
+    producto = Producto.query.get(producto_id)
+    #Validar si la producto existe
+    if isinstance(producto, Producto):
+        if request.method == 'GET':            
+            #devolver lista de productos serializadas
+            return jsonify(producto.serialize()), 200
+        elif request.method == 'PUT':
+            #recuperar diccionar del body del request
+            diccionario = request.json
+            #actualizar propiedades que vengan en el dicc
+            producto.modificar_producto(diccionario)
+            #guardar cambio en BD, hacer commit
+            try:
+                db.session.commit()
+                #devolver la producto serializada
+                return jsonify(producto.serialize()), 200
+            except Exception as error:
+                db.session.rollback()
+                print(f"{error.args} {type(error)}")
+                return jsonify({
+                    "resultado": f"{error.args}"
+                }), 500
+        else:
+            #remover la producto de  la BD, hacer commit, return 204
+            db.session.delete(producto)
+            try:
+                db.session.commit()
+                #devolver delete exitoso
+                return jsonify({
+                    "resultado": "Se ha eliminado la producto exitosamente"
+                }), 200
+            except Exception as error:
+                db.session.rollback()
+                print(f"{error.args} {type(error)}")
+                return jsonify({
+                    "resultado": f"{error.args}"
+                }), 500
+    else:
+        return jsonify({
+            "resultado":"La producto no existe"
+        }), 404
 
 #======================================
 #endpoints usuarios
@@ -189,63 +303,60 @@ def registar_usuario():
                 "resultado": f"{error.args}"
             }), 500
 
+# #========================================
+# @app.route('/producto', methods=['GET'])
+# def chequear_producto():
+#      productos = Producto.query.all()
+#      todos_productos = list(map(lambda x: x.serialize(), productos))
 
-#======================================
-#endpoints productos
-#========================================
-@app.route('/producto', methods=['GET'])
-def chequear_producto():
-     productos = Producto.query.all()
-     todos_productos = list(map(lambda x: x.serialize(), productos))
+#      return jsonify(todos_productos), 200
 
-     return jsonify(todos_productos), 200
+# @app.route('/producto', methods=['POST'])
+# def registrar_producto():
 
-@app.route('/producto', methods=['POST'])
-def registrar_producto():
+#      request_body_producto = request.get_json()
 
-     request_body_producto = request.get_json()
+#      producto1 = Producto(titulo=request_body_producto["titulo"], descripcion=request_body_producto["descripcion"], imagen=request_body_producto["imagen"], precio=request_body_producto["precio"])
+#      db.session.add(producto1)
+#      db.session.commit()
 
-     producto1 = Producto(titulo=request_body_producto["titulo"], descripcion=request_body_producto["descripcion"], imagen=request_body_producto["imagen"], precio=request_body_producto["precio"])
-     db.session.add(producto1)
-     db.session.commit()
+#      return jsonify(request_body_producto), 200
 
-     return jsonify(request_body_producto), 200
-
-@app.route('/producto/<int:producto_id>', methods=['PUT'])
-def actualizar_producto(producto_id):
+# @app.route('/producto/<int:producto_id>', methods=['PUT'])
+# def actualizar_producto(producto_id):
     
-     request_body_producto = request.get_json()
+#      request_body_producto = request.get_json()
 
-     producto1 = Producto.query.get(producto_id)
-     if producto1 is None:
-         raise APIException('Producto not found', status_code=404)
+#      producto1 = Producto.query.get(producto_id)
+#      if producto1 is None:
+#          raise APIException('Producto not found', status_code=404)
 
-     if "titulo" in request_body_producto:
-         producto1.titulo = request_body_producto["titulo"]
-     if "descripcion" in request_body_producto:
-         producto1.descripcion = request_body_producto["descripcion"]
-     if "imagen" in request_body_producto:
-         producto1.imagen = request_body_producto["imagen"]
-     if "precio" in request_body_producto:
-         producto1.precio = request_body_producto["precio"]
+#      if "titulo" in request_body_producto:
+#          producto1.titulo = request_body_producto["titulo"]
+#      if "descripcion" in request_body_producto:
+#          producto1.descripcion = request_body_producto["descripcion"]
+#      if "imagen" in request_body_producto:
+#          producto1.imagen = request_body_producto["imagen"]
+#      if "precio" in request_body_producto:
+#          producto1.precio = request_body_producto["precio"]
 
-     db.session.commit()
+#      db.session.commit()
 
-     return jsonify(request_body_producto), 200
+#      return jsonify(request_body_producto), 200
 
-@app.route('/producto/<int:producto_id>', methods=['DELETE'])
-def eliminar_producto(producto_id):
+# @app.route('/producto/<int:producto_id>', methods=['DELETE'])
+# def eliminar_producto(producto_id):
     
-     request_body_producto = request.get_json()
+#      request_body_producto = request.get_json()
 
-     producto1 = Producto.query.get(producto_id)
-     if producto1 is None:
-         raise APIException('Producto not found', status_code=404)
+#      producto1 = Producto.query.get(producto_id)
+#      if producto1 is None:
+#          raise APIException('Producto not found', status_code=404)
 
-     db.session.delete(producto1)
-     db.session.commit()
+#      db.session.delete(producto1)
+#      db.session.commit()
 
-     return jsonify(f"Producto con id: {producto_id} eliminado exitosamente!"), 200
+#      return jsonify(f"Producto con id: {producto_id} eliminado exitosamente!"), 200
 
 
 #this only runs if `$ python src/main.py` is executed
