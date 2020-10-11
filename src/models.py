@@ -7,7 +7,7 @@ class Categoria(db.Model):
     nombre = db.Column(db.String(25), unique=True, nullable=False)
     descripcion = db.Column(db.String(80), nullable=False)
     icono = db.Column(db.String(80), nullable=False)
-    productos = db.relationship('Producto', lazy=True)
+    productos = db.relationship('Producto', cascade="all, delete-orphan", lazy=True)
 
     def __str__(self):
         return f'{self.nombre}'
