@@ -9,14 +9,16 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Categoria, Producto
-#from models import Person
+from flask_jwt_simple import create_jwt, JWTManager
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = os.environ.get("APP_JWT_SECRET")
 MIGRATE = Migrate(app, db)
 db.init_app(app)
+jwt = JWTManager(app)
 CORS(app)
 setup_admin(app)
 
@@ -280,22 +282,25 @@ def registar_usuario():
             }),400
         if (
             "email" not in insumo_usuario or 
-            "password" not in insumo_usuario
+            "is_admin" not in insumo_usuario or
+            "password_hash" not in insumo_usuario
             ):
             return jsonify({
-                "resultado": "Debe indicar un email y password"
+                "resultado": "Debe indicar un email y password1"
             }),400
         #Validar que no venga vacio
         if (
             insumo_usuario["email"] == "" or
-            insumo_usuario["password"] == "" 
+            insumo_usuario["is_admin"] == "" or 
+            insumo_usuario["password_hash"] == ""
         ):
             return jsonify({
                 "resultado": "Debe indicar un email y password"
-            })
+            }),400
         nuevo_usuario = User.registro_usuario(
             insumo_usuario["email"],
-            insumo_usuario["password"]
+            insumo_usuario["is_admin"],
+            insumo_usuario["password_hash"]
         )
         #agregar a la base de datos
         db.session.add(nuevo_usuario)
@@ -309,6 +314,36 @@ def registar_usuario():
             return jsonify({
                 "resultado": f"{error.args}"
             }), 500
+
+@app.route('/users/login', methods=['POST'])
+def manejo_login():
+    """
+        Revisar existencia de usuario
+        Si existe, comparar password enviado con el almacenado
+    """
+    input_user = request.json
+    if (
+        "email" not in input_user or
+        "password_hash" not in input_user
+    ):
+        return jsonify ({"resultado": "No envio la informacion correcta para ingresar"}), 400   
+    else: 
+        usuario = User.query.filter_by(
+            email = input_user["email"]
+        ).one_or_none()
+        if usuario is None:
+            return jsonify ({"resultado": "Usuario no existe"}), 400 
+        else:
+            if usuario.check_password(input_user["password_hash"]):
+            #Accedio
+                token = create_jwt(identity=usuario.email)
+                return jsonify ({
+                    "resultado": "Acceso concedido",
+                    "token": token
+                    }), 400
+            else:
+                return jsonify ({"resultado": "Password incorrecto"}), 400
+
 
 #this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':

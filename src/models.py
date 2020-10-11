@@ -1,4 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
+import os
+from base64 import b64encode, b64decode
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -107,13 +110,22 @@ class Producto(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
     is_admin = db.Column(db.Boolean(), unique=False, nullable=False)
+    password_hash = db.Column(db.String(250), unique=False, nullable=False)
+    salt = db.Column(db.String(16), nullable=False)
 
-    def __init__(self,email,password,is_admin):
+    def __init__(self,email,is_admin,password_hash):
         self.email = email
-        self.password = password
         self.is_admin = is_admin
+        self.salt = b64encode(os.urandom(4)).decode("utf-8")
+        self.set_password(password_hash)
+
+    def set_password(self, password_hash):
+        self.password_hash = generate_password_hash(f"{password_hash}{self.salt}")
+
+    def check_password(self, password_hash):
+        """verifica el match entre los password"""
+        return check_password_hash(self.password_hash, f"{password_hash}{self.salt}")
 
     def __repr__(self):
         return '<User %s>' % self.email
