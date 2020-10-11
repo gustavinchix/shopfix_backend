@@ -9,16 +9,18 @@ class Categoria(db.Model):
     icono = db.Column(db.String(80), nullable=False)
     productos = db.relationship('Producto', lazy=True)
 
-    def __repr__(self):
-        return '<Categoria %s>' % self.nombre
-    
+    def __str__(self):
+        return f'{self.nombre}'
+
     def __init__(self,nombre,descripcion,icono):
         """crea y devuelve las instancias de la clase"""
         self.nombre = nombre
         self.descripcion = descripcion
         self.icono = icono
 
+    
     @classmethod
+   
     def registrar_categoria(cls, nombre, descripcion, icono):
         """
             normaliza insumos nombre e icono
@@ -48,13 +50,6 @@ class Categoria(db.Model):
             "icono": self.icono
         }
 
-    def serializar_productos(self):
-        """Serializa todos los productos asociados a una categoria"""
-        return{
-            "nombre": self.nombre,
-            "productos_categoria": list(map(lambda x: x.serialize(), self.productos))
-        }
-
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(50), unique=False, nullable=False)
@@ -63,43 +58,10 @@ class Producto(db.Model):
     imagen = db.Column(db.String(150), unique=False, nullable=True)
     categoria_id = db.Column(db.Integer, db.ForeignKey(Categoria.id))
 
-
-    # def __init__(self, titulo, descripcion, precio, imagen, categoria_id):
-    #     """crea y devuelve las instancias de la clase"""
-    #     self.titulo = titulo
-    #     self.descripcion = descripcion
-    #     self.precio = precio
-    #     self.imagen = imagen
-    #     self.categoria_id = categoria_id
-
     def __repr__(self):
         return '<Producto %s>' % self.titulo
-  
-    # @classmethod
-    # def registrar_producto(cls,titulo, descripcion, precio, imagen, categoria_id):
-    #     nuevo_producto= cls(
-    #         titulo.lower().capitalize(), 
-    #         descripcion, 
-    #         precio, 
-    #         imagen, 
-    #         categoria_id
-    #         )
-    #     return nuevo_producto
-
-    # def modificar_producto(self,diccionario):        
-    #     if "titulo" in diccionario:
-    #         self.titulo = diccionario["titulo"]
-    #     if "descripcion" in diccionario:
-    #         self.descripcion = diccionario["descripcion"]
-    #     if "precio" in diccionario:
-    #         self.precio = diccionario["precio"]
-    #     if "imagen" in diccionario:
-    #         self.imagen = diccionario["imagen"]
-    #     if "categoria_id" in diccionario:
-    #         self.categoria_id = diccionario["categoria_id"]
-    #     return True
-
-    def serialize(self):
+ 
+    def serialize(self):        
         return {
             "id": self.id,
             "titulo": self.titulo,
