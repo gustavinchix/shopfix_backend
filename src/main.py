@@ -9,7 +9,7 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Categoria, Producto
-from flask_jwt_simple import create_jwt, JWTManager
+from flask_jwt_simple import create_jwt, JWTManager, get_jwt_identity, jwt_required
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -336,10 +336,10 @@ def manejo_login():
         else:
             if usuario.check_password(input_user["password_hash"]):
             #Accedio
-                token = create_jwt(identity=usuario.email)
+                token = create_jwt(identity=usuario.id)           
                 return jsonify ({
                     "resultado": "Acceso concedido",
-                    "token": token
+                    "token": token                   
                     }), 400
             else:
                 return jsonify ({"resultado": "Password incorrecto"}), 400
