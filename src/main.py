@@ -10,12 +10,17 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Categoria, Producto
 from flask_jwt_simple import create_jwt, JWTManager, get_jwt_identity, jwt_required
+import cloudinary.uploader as uploader
+
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.environ.get("APP_JWT_SECRET")
+# app.config.from_mapping(
+#     CLOUDINARY_URL=os.environ.get["CLOUDINARY_URL"]
+# )
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 jwt = JWTManager(app)
@@ -203,6 +208,7 @@ def chequear_producto():
             insumo_producto["imagen"],
             insumo_producto["categoria_id"]
         )
+             
         #agregar a la base de datos
         db.session.add(nuevo_producto)
         try:
@@ -272,7 +278,7 @@ def categoria_prod(category_id):
 #======================================
 #endpoints usuarios
 #======================================
-@app.route('/users/register', methods=['POST'])
+@app.route('/register', methods=['POST'])
 def registar_usuario():
     if request.method == 'POST':
         insumo_usuario = request.json
@@ -315,7 +321,7 @@ def registar_usuario():
                 "resultado": f"{error.args}"
             }), 500
 
-@app.route('/users/login', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def manejo_login():
     """
         Revisar existencia de usuario

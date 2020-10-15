@@ -57,8 +57,8 @@ class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(50), unique=False, nullable=False)
     descripcion = db.Column(db.String(100), unique=False, nullable=False)
-    precio = db.Column(db.Integer, unique=False, nullable=False)
-    imagen = db.Column(db.String(150), unique=False, nullable=True)
+    precio = db.Column(db.Float, unique=False, nullable=False)
+    imagen = db.Column(db.String(2000), unique=False, nullable=True)
     categoria_id = db.Column(db.Integer, db.ForeignKey(Categoria.id))
 
 
